@@ -1,13 +1,14 @@
-package database
+package db
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"Build-your-own-database/config"
 )
 
 // Base path to store all databases
-var basePath = `C:\\Users\\bhargav\\OneDrive\\Desktop\\DatabaseStorage`
+var basePath = config.BasePath
 
 // CreateDatabase creates a new folder for the database
 func CreateDatabase(name string) error {

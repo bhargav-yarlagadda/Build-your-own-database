@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"Build-your-own-database/config"
 )
 
 // Base path for storing databases (replace with your actual base path)
-var basePath = `C:\\Users\\bhargav\\OneDrive\\Desktop\\DatabaseStorage`
+var basePath = config.BasePath
 
 // SetKeyValue sets a key-value pair in a specified document
 func SetKeyValue(dbName, docName, key string, value interface{}) error {

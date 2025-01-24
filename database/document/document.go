@@ -6,9 +6,10 @@ import (
 	"github.com/google/uuid"
 	"os"
 	"path/filepath"
+	"Build-your-own-database/config"
 )
 
-var basePath = `C:\\Users\\bhargav\\OneDrive\\Desktop\\DatabaseStorage`
+var basePath = config.BasePath
 
 // CreateDocument creates a new document with an optional UUID
 func CreateDocument(dbName, docName string, content map[string]interface{}, customUUID ...string) (string, error) {
