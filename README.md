@@ -16,6 +16,8 @@ This is a simple database implementation using Go and Fiber. It provides an API 
 - **UUID**: Used for generating unique identifiers for documents.
 - **JSON**: Used for document storage.
 
+
+
 ## Project Structure
 
 ```
@@ -89,3 +91,8 @@ go run main.go
 - **URL**: `/{databaseName}/document/{documentName}`
 - **Method**: `GET`
 
+
+
+## ToDo's
+- Implement all routes
+- Integrate ACID Properties
