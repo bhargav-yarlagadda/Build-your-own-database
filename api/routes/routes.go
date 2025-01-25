@@ -9,3 +9,6 @@ import (
 func CreateDatabaseRoute(app *fiber.App) {
 	app.Post("/create-database", handlers.CreateDataBaseHandler)
 }
+func DeleteDatabaseRoute(app *fiber.App) {
+	app.Delete("/delete-database", handlers.DeleteDatabaseHandler)
+}

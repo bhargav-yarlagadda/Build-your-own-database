@@ -23,3 +23,26 @@ func CreateDataBaseHandler(c *fiber.Ctx) error {
 
 
 }
+
+func DeleteDatabaseHandler(c *fiber.Ctx) error {
+	// Get the database name from the request body
+	var requestData struct {
+		DbName string `json:"dbname"`
+	}
+
+	// Parse the request body into the struct
+	if err := c.BodyParser(&requestData); err != nil {
+		log.Printf("Error parsing body: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Call the DeleteDatabase function from the db package
+	_,err := db.DeleteDatabase(requestData.DbName)
+	if err != nil {
+		log.Printf("Error deleting database: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete database"})
+	}
+
+	// Return a success message
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Database deleted successfully!"})
+}

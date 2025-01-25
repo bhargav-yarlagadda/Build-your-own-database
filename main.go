@@ -12,7 +12,10 @@ func main() {
 
 	// Set up all the routes
 	routes.CreateDatabaseRoute(app)
+	routes.DeleteDatabaseRoute(app) 
 
 	// Start the server
 	log.Fatal(app.Listen(":8080"))
 }
+
+
