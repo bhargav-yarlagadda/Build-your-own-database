@@ -156,3 +156,53 @@ func DeleteDocument(dbName, docName string) error {
 	fmt.Println("Document deleted:", docPath)
 	return nil
 }
+
+// ReadAllDocuments retrieves all documents from a specified database
+func ReadAllDocuments(dbName string) ([]map[string]interface{}, error) {
+	dbPath := filepath.Join(basePath, dbName)
+
+	// Check if the database exists
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("database '%s' does not exist", dbName)
+	}
+
+	// List all files in the database directory
+	files, err := os.ReadDir(dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read database '%s': %v", dbName, err)
+	}
+
+	// Prepare a slice to hold the documents
+	var documents []map[string]interface{}
+
+	// Iterate through all files
+	for _, file := range files {
+		// Skip directories
+		if file.IsDir() {
+			continue
+		}
+
+		// Open and decode the file
+		docPath := filepath.Join(dbPath, file.Name())
+		fileHandle, err := os.Open(docPath)
+		if err != nil {
+			fmt.Printf("Skipping file '%s' due to error: %v\n", file.Name(), err)
+			continue
+		}
+		defer fileHandle.Close()
+
+		content := make(map[string]interface{})
+		decoder := json.NewDecoder(fileHandle)
+		err = decoder.Decode(&content)
+		if err != nil {
+			fmt.Printf("Skipping file '%s' due to decoding error: %v\n", file.Name(), err)
+			continue
+		}
+
+		// Add the document content to the slice
+		documents = append(documents, content)
+	}
+
+	// Return the list of documents
+	return documents, nil
+}

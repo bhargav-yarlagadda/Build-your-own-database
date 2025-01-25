@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"Build-your-own-database/api/handlers" // Import the handler
+	"github.com/gofiber/fiber/v2"
 )
 
 // CreateDatabaseRoute sets up the route for creating a database
@@ -22,4 +22,11 @@ func DeleteDocumentRoute(app *fiber.App) {
 
 	// Route to delete a document
 	app.Delete("/:databaseName/delete-document/:docName", handlers.DeleteDocumentHandler)
+}
+func ReadDocumentRoute(app *fiber.App){
+	app.Get("/:databasename/:docname",handlers.ReadDocumentHandler)
+}
+
+func ReadAllDocumentsRoute(app *fiber.App){
+	app.Get("/:dbName",handlers.ReadAllDocumentsHandler)
 }

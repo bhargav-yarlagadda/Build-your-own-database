@@ -117,3 +117,40 @@ func DeleteDocumentHandler(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("Document '%s' deleted successfully", docName)})
 }
+func ReadDocumentHandler(c *fiber.Ctx) error {
+	dbName := c.Params("databasename")
+	docName := c.Params("docname")
+
+	// Check if the database exists
+	_, err := db.UseDatabase(dbName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Database Not Found"})
+	}
+
+	// Read the document
+	data, err := document.ReadDocument(dbName, docName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Document Not Found"})
+	}
+
+	// Return the data as JSON
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Document retrieved successfully",
+		"data":    data,
+	})
+}
+func ReadAllDocumentsHandler(c *fiber.Ctx) error {
+	dbName := c.Params("dbName")
+	_, err := db.UseDatabase(dbName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Database Not Found."})
+	}
+	data, err := document.ReadAllDocuments(dbName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Error in Fetching Documents."})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Document retrieved successfully",
+		"data":    data,
+	})
+}
