@@ -18,6 +18,7 @@ This is a simple database implementation using Go and Fiber. It provides an API 
 
 ## Project Structure
 
+```
 ├── api/
 │   ├── handlers/
 │   │   ├── create_document.go   # Handler for creating documents
@@ -40,6 +41,7 @@ This is a simple database implementation using Go and Fiber. It provides an API 
 ├── go.mod                      
 ├── go.sum
 └── README.md                    # MardDown
+```
 
 
 ## installation
