@@ -14,7 +14,9 @@ func main() {
 	routes.CreateDatabaseRoute(app)
 	routes.DeleteDatabaseRoute(app) 
 	routes.CreateDocumentRoute(app)
+	routes.ReadDocumentRoute(app)
 	routes.DeleteDocumentRoute(app)
+	routes.ReadAllDocumentsRoute(app)
 	// Start the server
 	log.Fatal(app.Listen(":8080"))
 }
