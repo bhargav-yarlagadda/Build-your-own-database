@@ -12,3 +12,8 @@ func CreateDatabaseRoute(app *fiber.App) {
 func DeleteDatabaseRoute(app *fiber.App) {
 	app.Delete("/delete-database", handlers.DeleteDatabaseHandler)
 }
+
+func CreateDocumentRoute(app *fiber.App) {
+	// Route to create a document
+	app.Post("/:databaseName/create-document", handlers.CreateDocumentHandler)
+}

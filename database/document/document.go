@@ -12,7 +12,7 @@ import (
 var basePath = config.BasePath
 
 // CreateDocument creates a new document with an optional UUID
-func CreateDocument(dbName, docName string, content map[string]interface{}, customUUID ...string) (string, error) {
+func CreateDocument(dbName, docName string, content map[string]interface{}) (string, error) {
 	dbPath := filepath.Join(basePath, dbName)
 	docPath := filepath.Join(dbPath, docName+".json")
 
@@ -27,12 +27,7 @@ func CreateDocument(dbName, docName string, content map[string]interface{}, cust
 	}
 
 	// Generate or use the provided UUID
-	var docUUID string
-	if len(customUUID) > 0 {
-		docUUID = customUUID[0]
-	} else {
-		docUUID = uuid.New().String()
-	}
+	docUUID:= uuid.New().String()
 
 	// Add the UUID to the content
 	if content == nil {
