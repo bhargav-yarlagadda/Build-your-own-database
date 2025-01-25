@@ -154,3 +154,33 @@ func ReadAllDocumentsHandler(c *fiber.Ctx) error {
 		"data":    data,
 	})
 }
+
+func UpdateDocumentHandler(c *fiber.Ctx) error {
+	// Retrieve parameters from the request
+	dbName := c.Params("dbName")
+	docName := c.Params("docName")
+
+	// Check if the database exists
+	_, err := db.UseDatabase(dbName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Database Not Found."})
+	}
+
+	// Parse the request body into a map
+	var updates map[string]interface{}
+	if err := c.BodyParser(&updates); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body"})
+	}
+
+	// Update the document
+	err = document.UpdateDocument(dbName,docName,updates)
+	if err != nil {
+		if err.Error() == fmt.Sprintf("document '%s' does not exist", docName) {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Document Not Found"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update document", "details": err.Error()})
+	}
+
+	// Respond with success
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("Document '%s' updated successfully", docName)})
+}

@@ -30,3 +30,7 @@ func ReadDocumentRoute(app *fiber.App){
 func ReadAllDocumentsRoute(app *fiber.App){
 	app.Get("/:dbName",handlers.ReadAllDocumentsHandler)
 }
+func UpdateDocumentRoute(app *fiber.App){
+	app.Patch("/:dbName/update-document/:docName",handlers.UpdateDocumentHandler)
+}
+
