@@ -91,3 +91,29 @@ func CreateDocumentHandler(c *fiber.Ctx) error {
 		"docPath": docPath,
 	})
 }
+
+
+
+
+// DeleteDocumentHandler handles the delete document route
+func DeleteDocumentHandler(c *fiber.Ctx) error {
+	// Get the database and document names from the URL params
+	dbName := c.Params("databaseName")
+	docName := c.Params("docName")
+
+	// Use the database to check if it exists
+	_, err := db.UseDatabase(dbName)
+	if err != nil {
+		log.Printf("Error verifying database: %v", err)
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Database not found"})
+	}
+
+	// Delete the document
+	err = document.DeleteDocument(dbName, docName)
+	if err != nil {
+		log.Printf("Error deleting document: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete document"})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("Document '%s' deleted successfully", docName)})
+}
