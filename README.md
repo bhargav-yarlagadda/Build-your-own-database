@@ -75,8 +75,7 @@ go run main.go
 - **GET** `/{databaseName}/documents`
 - **GET** `/{databaseName}/document/{documentName}`
 - **PATCH** `/{databaseName}/update-document/{documentName}`
-
-
+- 
 ## ToDo's
 - Implement all routes
 - Integrate ACID Properties
