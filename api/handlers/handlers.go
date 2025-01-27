@@ -214,3 +214,44 @@ func DeletePairFromDocumentHandler(c *fiber.Ctx) error {
 		"message": fmt.Sprintf("Key '%s' deleted successfully from document '%s'", keyToDelete, docName),
 	})
 }
+
+
+func UpdatePairInDocumentHandler(c *fiber.Ctx) error {
+	dbName := c.Params("dbName")
+	docName := c.Params("docName")
+
+	// Parse the request body to get the key and value
+	var requestBody struct {
+		Key   string      `json:"key"`
+		Value interface{} `json:"value"`
+	}
+	if err := c.BodyParser(&requestBody); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request body", "details": err.Error()})
+	}
+
+	// Validate key and value
+	if requestBody.Key == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Key must be provided"})
+	}
+	if requestBody.Value == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Value must be provided"})
+	}
+
+	// Call the UpdateKeyValue function
+	err := keyvalues.SetKeyValue(dbName, docName, requestBody.Key, requestBody.Value)
+	if err != nil {
+		// Handle specific error cases
+		if strings.Contains(err.Error(), "does not exist in database") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Document Not Found"})
+		}
+		if strings.Contains(err.Error(), "failed to update") {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to update key-value pair", "details": err.Error()})
+	}
+
+	// Respond with success
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("Key '%s' updated successfully in document '%s'", requestBody.Key, docName),
+	})
+}

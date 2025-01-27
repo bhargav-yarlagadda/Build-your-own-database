@@ -19,6 +19,7 @@ func main() {
 	routes.ReadAllDocumentsRoute(app)
 	routes.UpdateDocumentRoute(app)
 	routes.DeletePairFromDocumentRoute(app)
+	routes.UpdatePairInDocumentRoute(app)
 	// Start the server
 	log.Fatal(app.Listen(":8080"))
 }
