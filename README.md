@@ -64,35 +64,18 @@ go run main.go
 
 ### navigate to config.go and change the basePath as per your preference
 
-## api end points
 ## API Endpoints
 
-### 1. **Create a Database**
-- **URL**: `/create-database`
-- **Method**: `POST`
+# API Endpoints
 
-### 2. **Delete a Database**
-- **URL**: `/delete-database/{databaseName}`
-- **Method**: `DELETE`
-
-### 3. **Create a Document**
-- **URL**: `/{databaseName}/create-document`
-- **Method**: `POST`
-
-### 4. **Delete a Document**
-- **URL**: `/{databaseName}/delete-document/{documentName}`
-- **Method**: `DELETE`
-
-### 5. **Get All Documents in a Database**
-- **URL**: `/{databaseName}/documents`
-- **Method**: `GET`
-
-### 6. **Get a Document by Name**
-- **URL**: `/{databaseName}/document/{documentName}`
-- **Method**: `GET`
-
-
-
+- **POST** `/create-database`
+- **DELETE** `/delete-database/{databaseName}`
+- **POST** `/{databaseName}/create-document`
+- **DELETE** `/{databaseName}/delete-document/{documentName}`
+- **GET** `/{databaseName}/documents`
+- **GET** `/{databaseName}/document/{documentName}`
+- **PATCH** `/{databaseName}/update-document/{documentName}`
+- 
 ## ToDo's
 - Implement all routes
 - Integrate ACID Properties
