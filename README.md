@@ -78,4 +78,4 @@ go run main.go
 - **PATCH** `/{databaseName}/{documentName}/delete-pair/{key}`
 - **PATCH** `/{databaseName}/{documentName}/update-pair`
 ## ToDo's
-- Integrate ACID Properties
+- Concurrency
