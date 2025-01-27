@@ -3,9 +3,11 @@ package handlers
 import (
 	"Build-your-own-database/database/db"
 	"Build-your-own-database/database/document"
+	keyvalues "Build-your-own-database/database/key-value"
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -183,4 +185,32 @@ func UpdateDocumentHandler(c *fiber.Ctx) error {
 
 	// Respond with success
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": fmt.Sprintf("Document '%s' updated successfully", docName)})
+}
+
+func DeletePairFromDocumentHandler(c *fiber.Ctx) error {
+	dbName := c.Params("dbName")
+	docName := c.Params("docName")
+	keyToDelete := c.Params("key") // Assume the key to delete is passed as a parameter
+
+	if keyToDelete == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Key to delete must be provided"})
+	}
+
+	// Call the DeleteKeyValue function
+	err := keyvalues.DeleteKeyValue(dbName, docName, keyToDelete)
+	if err != nil {
+		// Handle specific error cases
+		if strings.Contains(err.Error(), "does not exist in database") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Document Not Found"})
+		}
+		if strings.Contains(err.Error(), "key") {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err.Error()})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to delete key", "details": err.Error()})
+	}
+
+	// Respond with success
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("Key '%s' deleted successfully from document '%s'", keyToDelete, docName),
+	})
 }

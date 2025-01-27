@@ -34,3 +34,7 @@ func UpdateDocumentRoute(app *fiber.App){
 	app.Patch("/:dbName/update-document/:docName",handlers.UpdateDocumentHandler)
 }
 
+func DeletePairFromDocumentRoute(app *fiber.App){
+	app.Patch("/:dbName/:docName/delete-pair/:key",handlers.DeletePairFromDocumentHandler)
+}
+
