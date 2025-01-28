@@ -6,13 +6,32 @@ import (
 	"os"
 	"path/filepath"
 	"Build-your-own-database/config"
+	"sync"
 )
 
-// Base path for storing databases (replace with your actual base path)
 var basePath = config.BasePath
 
-// SetKeyValue sets a key-value pair in a specified document
+// Mutex map to handle concurrency for each document
+var docMutexMap = make(map[string]*sync.Mutex)
+
+// GetOrCreateMutex returns the mutex for a given document, creating one if it doesn't exist
+func GetOrCreateMutex(dbName, docName string) *sync.Mutex {
+	docKey := dbName + "/" + docName
+	mu, exists := docMutexMap[docKey]
+	if !exists {
+		mu = &sync.Mutex{}
+		docMutexMap[docKey] = mu
+	}
+	return mu
+}
+
+// SetKeyValue sets a key-value pair in a specified document with concurrency protection
 func SetKeyValue(dbName, docName, key string, value interface{}) error {
+	// Get the mutex for the document and lock it
+	mu := GetOrCreateMutex(dbName, docName)
+	mu.Lock()
+	defer mu.Unlock()
+
 	// Construct the full path to the document
 	docPath := filepath.Join(basePath, dbName, docName+".json")
 
@@ -56,8 +75,13 @@ func SetKeyValue(dbName, docName, key string, value interface{}) error {
 	return nil
 }
 
-// GetKeyValue retrieves the value of a key in a specified document
+// GetKeyValue retrieves the value of a key in a specified document with concurrency protection
 func GetKeyValue(dbName, docName, key string) (interface{}, error) {
+	// Get the mutex for the document and lock it
+	mu := GetOrCreateMutex(dbName, docName)
+	mu.Lock()
+	defer mu.Unlock()
+
 	// Construct the full path to the document
 	docPath := filepath.Join(basePath, dbName, docName+".json")
 
@@ -89,9 +113,14 @@ func GetKeyValue(dbName, docName, key string) (interface{}, error) {
 
 	return value, nil
 }
- 
-// DeleteKeyValue removes a key-value pair from a specified document
+
+// DeleteKeyValue removes a key-value pair from a specified document with concurrency protection
 func DeleteKeyValue(dbName, docName, key string) error {
+	// Get the mutex for the document and lock it
+	mu := GetOrCreateMutex(dbName, docName)
+	mu.Lock()
+	defer mu.Unlock()
+
 	// Construct the full path to the document
 	docPath := filepath.Join(basePath, dbName, docName+".json")
 
