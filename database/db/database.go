@@ -48,7 +48,7 @@ func UseDatabase(name string) (string, error) {
 	}
 
 	fmt.Println("Using database:", dbPath)
-	return dbPath, nil
+	return dbPath, nil 
 }
 
 // DeleteDatabase removes a database folder and its contents
