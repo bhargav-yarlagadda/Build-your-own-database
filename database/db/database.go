@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"Build-your-own-database/config"
 )
 
-// Base path to store all databases
 var basePath = config.BasePath
+var dbMutex sync.Mutex // Mutex to protect database operations
 
 // CreateDatabase creates a new folder for the database
 func CreateDatabase(name string) error {
+	dbMutex.Lock() // Lock to ensure only one operation at a time
+	defer dbMutex.Unlock() // Unlock after the operation
+
 	// Construct the database path
 	dbPath := filepath.Join(basePath, name)
 
@@ -32,6 +36,9 @@ func CreateDatabase(name string) error {
 
 // UseDatabase sets the active database to use
 func UseDatabase(name string) (string, error) {
+	dbMutex.Lock() // Lock to ensure only one operation at a time
+	defer dbMutex.Unlock() // Unlock after the operation
+
 	// Construct the full path to the database
 	dbPath := filepath.Join(basePath, name)
 
@@ -46,6 +53,9 @@ func UseDatabase(name string) (string, error) {
 
 // DeleteDatabase removes a database folder and its contents
 func DeleteDatabase(name string) (string, error) {
+	dbMutex.Lock() // Lock to ensure only one operation at a time
+	defer dbMutex.Unlock() // Unlock after the operation
+
 	// Construct the full path to the database
 	dbPath := filepath.Join(basePath, name)
 
