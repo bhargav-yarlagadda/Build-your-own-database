@@ -9,6 +9,7 @@ This is a simple database implementation using Go and Fiber. It provides an API 
 - Create a document within a database
 - Delete a document from a database
 - access attributes in the documents and modify  them.
+- Implemented concurrency control mechanisms to manage shared resource locking during simultaneous database edits, ensuring data consistency and preventing race conditions
 ## Technologies Used
 
 - **Go**: The programming language for building the database and API.
@@ -78,4 +79,4 @@ go run main.go
 - **PATCH** `/{databaseName}/{documentName}/delete-pair/{key}`
 - **PATCH** `/{databaseName}/{documentName}/update-pair`
 ## ToDo's
-- Concurrency
+- Distributed File Storage
