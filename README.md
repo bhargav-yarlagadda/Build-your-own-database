@@ -1,4 +1,4 @@
-# Build Your Own Database
+# Build Your Own Database 
 
 This is a simple database implementation using Go and Fiber. It provides an API for managing databases and documents, allowing users to create, delete, and manage documents within databases. This project is built with Go's powerful standard library and the Fiber web framework for creating RESTful APIs.
 
