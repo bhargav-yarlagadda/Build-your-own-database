@@ -2,7 +2,7 @@
 
 
 # Build Your Own Database 
-🚀 I'm currently working on the db-revamp branch.If you'd like to contribute, please pull the latest changes from db-revamp and submit a pull request (PR).Happy coding! 😊
+🚀 I'm currently working on the `db-revamp` branch.If you'd like to contribute, please pull the latest changes from `db-revamp` and submit a pull request (PR).Happy coding! 😊
 
 This is a simple database implementation using Go and Fiber. It provides an API for managing databases and documents, allowing users to create, delete, and manage documents within databases. This project is built with Go's powerful standard library and the Fiber web framework for creating RESTful APIs.
 
