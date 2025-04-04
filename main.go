@@ -1,27 +1,20 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"Build-your-own-database/api/routes" // Import routes
-	"log"
+	"Build-your-own-database/database/db"
 )
 
 func main() {
-	// Initialize the Fiber app
-	app := fiber.New()
+	// Initialize GoDB and DBManager
 
-	// Set up all the routes
-	routes.CreateDatabaseRoute(app)
-	routes.DeleteDatabaseRoute(app) 
-	routes.CreateDocumentRoute(app)
-	routes.ReadDocumentRoute(app)
-	routes.DeleteDocumentRoute(app)
-	routes.ReadAllDocumentsRoute(app)
-	routes.UpdateDocumentRoute(app)
-	routes.DeletePairFromDocumentRoute(app)
-	routes.UpdatePairInDocumentRoute(app)
-	// Start the server
-	log.Fatal(app.Listen(":8080"))
+	dbManager := db.NewDBManager()
+
+	// Create a database
+	dbManager.CreateDatabase("testDB")
+
+	// Use the database
+	dbManager.UseDatabase("testDB")
+
+	// Delete the database
+	dbManager.DeleteDatabase("testDB")
 }
-
-
