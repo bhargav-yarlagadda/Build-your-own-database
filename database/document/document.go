@@ -1,253 +1,134 @@
-package document
+package documents
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"os"
 	"path/filepath"
-	"Build-your-own-database/config"
 	"sync"
+
+	"Build-your-own-database/database/models"
 )
 
-var basePath = config.BasePath
+type DocumentManager struct {
+	collection *models.Collection
+	docMux     sync.RWMutex
+}
 
-// Mutex to handle concurrent write access to the same database
-var dbMutex sync.Mutex
+// Constructor
+func NewDocumentManager(collection *models.Collection) *DocumentManager {
+	return &DocumentManager{
+		collection: collection,
+	}
+}
 
-// CreateDocument creates a new document with an optional UUID
-func CreateDocument(dbName, docName string, content map[string]interface{}) (string, error) {
-	// Lock the database to ensure no other write operation is in progress
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+// 1. CreateDocument
+func (dm *DocumentManager) CreateDocument(id string, data map[string]interface{}) (*models.Document, error) {
+	dm.docMux.Lock()
+	defer dm.docMux.Unlock()
 
-	dbPath := filepath.Join(basePath, dbName)
-	docPath := filepath.Join(dbPath, docName+".json")
-
-	// Check if the database exists
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("database %v does not exist: %v", dbName, err)
+	if _, exists := dm.collection.Documents[id]; exists {
+		return nil, fmt.Errorf("document '%s' already exists", id)
 	}
 
-	// Check if the document already exists
-	if _, err := os.Stat(docPath); !os.IsNotExist(err) {
-		return "", fmt.Errorf("document '%s' already exists", docName)
+	docPath := filepath.Join(dm.collection.Path, id+".json")
+	doc := &models.Document{
+		ID:   id,
+		Data: data,
+		Path: docPath,
 	}
 
-	// Generate or use the provided UUID
-	docUUID := uuid.New().String()
+	// Save to memory
+	dm.collection.Documents[id] = doc
 
-	// Add the UUID to the content
-	if content == nil {
-		content = make(map[string]interface{})
-	}
-	content["uuid"] = docUUID
-
-	// Create and write to the document file
+	// Save to disk
 	file, err := os.Create(docPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to create document '%s': %v", docName, err)
+		return nil, fmt.Errorf("failed to create document file: %v", err)
 	}
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(content)
-	if err != nil {
-		return "", fmt.Errorf("failed to write content to document '%s': %v", docName, err)
+	if err := encoder.Encode(doc); err != nil {
+		return nil, fmt.Errorf("failed to encode document: %v", err)
 	}
 
-	fmt.Println("Document created with UUID:", docUUID)
-	return docUUID, nil
+	fmt.Println("Created document:", id)
+	return doc, nil
 }
 
-// UpdateDocument updates a document by its name
-func UpdateDocument(dbName, docName string, updates map[string]interface{}) error {
-	// Lock the database to ensure no other write operation is in progress
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
+// 2. UseDocument (load from disk if not in memory)
+func (dm *DocumentManager) UseDocument(id string) (*models.Document, error) {
+	dm.docMux.RLock()
+	doc, exists := dm.collection.Documents[id]
+	dm.docMux.RUnlock()
 
-	content, err := ReadDocument(dbName, docName)
-	if err != nil {
-		return err
+	if exists {
+		fmt.Println("Using document from memory:", id)
+		return doc, nil
 	}
 
-	// Apply updates
-	for key, value := range updates {
-		content[key] = value
-	}
-
-	// Write the updated content back to the file
-	docPath := filepath.Join(basePath, dbName, docName+".json")
-	file, err := os.Create(docPath)
-	if err != nil {
-		return fmt.Errorf("failed to update document '%s': %v", docName, err)
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	err = encoder.Encode(content)
-	if err != nil {
-		return fmt.Errorf("failed to write updates to document '%s': %v", docName, err)
-	}
-
-	fmt.Println("Document updated:", docPath)
-	return nil
-}
-
-// DeleteDocument deletes a document by its name
-func DeleteDocument(dbName, docName string) error {
-	// Lock the database to ensure no other write operation is in progress
-	dbMutex.Lock()
-	defer dbMutex.Unlock()
-
-	docPath := filepath.Join(basePath, dbName, docName+".json")
-
-	if _, err := os.Stat(docPath); os.IsNotExist(err) {
-		return fmt.Errorf("document '%s' does not exist", docName)
-	}
-
-	err := os.Remove(docPath)
-	if err != nil {
-		return fmt.Errorf("failed to delete document '%s': %v", docName, err)
-	}
-
-	fmt.Println("Document deleted:", docPath)
-	return nil
-}
-
-// ReadDocument retrieves the document using its name
-func ReadDocument(dbName, docName string) (map[string]interface{}, error) {
-	docPath := filepath.Join(basePath, dbName, docName+".json")
-	if _, err := os.Stat(docPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("document '%s' does not exist", docName)
-	}
-
+	// Load from disk
+	docPath := filepath.Join(dm.collection.Path, id+".json")
 	file, err := os.Open(docPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open document '%s': %v", docName, err)
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("document '%s' does not exist", id)
+		}
+		return nil, err
 	}
 	defer file.Close()
 
-	content := make(map[string]interface{})
+	var loadedDoc models.Document
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&content)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode document '%s': %v", docName, err)
+	if err := decoder.Decode(&loadedDoc); err != nil {
+		return nil, err
 	}
+	loadedDoc.Path = docPath
 
-	return content, nil
+	// Save to memory
+	dm.docMux.Lock()
+	dm.collection.Documents[id] = &loadedDoc
+	dm.docMux.Unlock()
+
+	fmt.Println("Loaded document from disk:", id)
+	return &loadedDoc, nil
 }
 
-// RetrieveDocumentByUUID fetches a document using its UUID
-func RetrieveDocumentByUUID(dbName, docUUID string) (map[string]interface{}, error) {
-	dbPath := filepath.Join(basePath, dbName)
+// 3. DeleteDocument
+func (dm *DocumentManager) DeleteDocument(id string) error {
+	dm.docMux.Lock()
+	defer dm.docMux.Unlock()
 
-	// List all files in the database directory
-	files, err := os.ReadDir(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read database '%s': %v", dbName, err)
+	doc, exists := dm.collection.Documents[id]
+	if !exists {
+		return fmt.Errorf("document '%s' does not exist", id)
 	}
 
-	for _, file := range files {
-		if !file.IsDir() {
-			docPath := filepath.Join(dbPath, file.Name())
-
-			// Open and decode the file
-			fileHandle, err := os.Open(docPath)
-			if err != nil {
-				continue // Skip if the file cannot be opened
-			}
-			defer fileHandle.Close()
-
-			content := make(map[string]interface{})
-			decoder := json.NewDecoder(fileHandle)
-			err = decoder.Decode(&content)
-			if err != nil {
-				continue // Skip if decoding fails
-			}
-
-			// Check if the UUID matches
-			if content["uuid"] == docUUID {
-				return content, nil
-			}
-		}
+	// Delete from disk
+	if err := os.Remove(doc.Path); err != nil {
+		return fmt.Errorf("failed to delete document file: %v", err)
 	}
 
-	return nil, fmt.Errorf("document with UUID '%s' not found", docUUID)
+	// Delete from memory
+	delete(dm.collection.Documents, id)
+
+	fmt.Println("Deleted document:", id)
+	return nil
 }
 
+// 4. FindDocument
+func (dm *DocumentManager) FindDocument(key string, val interface{}) []*models.Document {
+	dm.docMux.RLock()
+	defer dm.docMux.RUnlock()
 
-
-
-// ReadAllDocuments retrieves all documents from a specified database concurrently
-func ReadAllDocuments(dbName string) (map[string]map[string]interface{}, error) {
-	dbPath := filepath.Join(basePath, dbName)
-
-	// Check if the database exists
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("database '%s' does not exist", dbName)
-	}
-
-	// List all files in the database directory
-	files, err := os.ReadDir(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read database '%s': %v", dbName, err)
-	}
-
-	// Prepare a map to hold the documents
-	documents := make(map[string]map[string]interface{})
-	var mu sync.Mutex  // Mutex to synchronize access to shared documents map
-	var wg sync.WaitGroup // WaitGroup to wait for all Goroutines to finish
-
-	// Channel to collect errors
-	errCh := make(chan error, len(files))
-
-	// Iterate through all files
-	for _, file := range files {
-		// Skip directories
-		if file.IsDir() {
-			continue
-		}
-
-		// Launch a Goroutine for each document to read concurrently
-		wg.Add(1)
-		go func(fileName string) {
-			defer wg.Done()
-
-			// Open and decode the file
-			docPath := filepath.Join(dbPath, fileName)
-			fileHandle, err := os.Open(docPath)
-			if err != nil {
-				errCh <- fmt.Errorf("failed to open file '%s': %v", fileName, err)
-				return
-			}
-			defer fileHandle.Close()
-
-			content := make(map[string]interface{})
-			decoder := json.NewDecoder(fileHandle)
-			err = decoder.Decode(&content)
-			if err != nil {
-				errCh <- fmt.Errorf("failed to decode file '%s': %v", fileName, err)
-				return
-			}
-
-			// Use a mutex to safely add the document to the shared map with fileName as the key
-			mu.Lock()
-			documents[fileName] = content
-			mu.Unlock()
-		}(file.Name())
-	}
-
-	// Wait for all Goroutines to finish
-	wg.Wait()
-	close(errCh)
-
-	// Handle any errors that occurred during concurrent execution
-	for err := range errCh {
-		if err != nil {
-			fmt.Println("Error:", err)
+	var results []*models.Document
+	for _, doc := range dm.collection.Documents {
+		if v, ok := doc.Data[key]; ok && v == val {
+			results = append(results, doc)
 		}
 	}
 
-	return documents, nil
+	fmt.Printf("Found %d document(s) matching %s = %v\n", len(results), key, val)
+	return results
 }

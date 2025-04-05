@@ -14,7 +14,7 @@ import (
 // CollectionManager handles operations related to collections within a database
 type CollectionManager struct {
 	db     *models.Database
-	colMux sync.Mutex
+	colMux sync.RWMutex
 }
 
 // NewCollectionManager initializes a CollectionManager for a given database
@@ -44,6 +44,7 @@ func (cm *CollectionManager) CreateCollection(name string) (*models.Collection, 
 	collection := &models.Collection{
 		Name:      name,
 		Documents: make(map[string]*models.Document),
+		Path:      colPath,
 	}
 
 	// Persist collection metadata
@@ -60,26 +61,34 @@ func (cm *CollectionManager) CreateCollection(name string) (*models.Collection, 
 
 // UseCollection retrieves an existing collection, loading from disk if necessary
 func (cm *CollectionManager) UseCollection(name string) (*models.Collection, error) {
-	cm.colMux.Lock()
-	defer cm.colMux.Unlock()
+	cm.colMux.RLock()
+	collection, exists := cm.db.Collections[name]
+	cm.colMux.RUnlock()
 
-	// Check if the collection is already in memory
-	if collection, exists := cm.db.Collections[name]; exists {
+	if exists {
 		fmt.Println("Using collection from memory:", name)
 		return collection, nil
 	}
 
+	// Lock for write since we're modifying the map
+	cm.colMux.Lock()
+	defer cm.colMux.Unlock()
+
+	// Double check in case another thread loaded it in the meantime
+	if collection, exists = cm.db.Collections[name]; exists {
+		fmt.Println("Using collection from memory (after recheck):", name)
+		return collection, nil
+	}
+
 	// Load collection from disk
-	collection, err := cm.loadCollection(name)
+	loadedCollection, err := cm.loadCollection(name)
 	if err != nil {
 		return nil, err
 	}
 
-	// Store it in memory
-	cm.db.Collections[name] = collection
-
+	cm.db.Collections[name] = loadedCollection
 	fmt.Println("Loaded collection from disk:", name)
-	return collection, nil
+	return loadedCollection, nil
 }
 
 // DeleteCollection removes a collection from the database and disk
@@ -109,8 +118,8 @@ func (cm *CollectionManager) DeleteCollection(name string) error {
 
 // saveCollection writes the collection metadata to a JSON file
 func (cm *CollectionManager) saveCollection(collection *models.Collection) error {
-	colPath := filepath.Join(config.BasePath, cm.db.Name, collection.Name, "metadata.json")
-	file, err := os.Create(colPath)
+	metadataPath := filepath.Join(collection.Path, "metadata.json")
+	file, err := os.Create(metadataPath)
 	if err != nil {
 		return err
 	}
@@ -122,10 +131,10 @@ func (cm *CollectionManager) saveCollection(collection *models.Collection) error
 
 // loadCollection reads a collection from its metadata file
 func (cm *CollectionManager) loadCollection(name string) (*models.Collection, error) {
-	colPath := filepath.Join(config.BasePath, cm.db.Name, name, "metadata.json")
+	colPath := filepath.Join(config.BasePath, cm.db.Name, name)
+	metadataPath := filepath.Join(colPath, "metadata.json")
 
-	// Check if metadata file exists
-	file, err := os.Open(colPath)
+	file, err := os.Open(metadataPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("collection '%s' does not exist on disk", name)
@@ -134,17 +143,19 @@ func (cm *CollectionManager) loadCollection(name string) (*models.Collection, er
 	}
 	defer file.Close()
 
-	// Decode JSON file
 	var collection models.Collection
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&collection); err != nil {
 		return nil, err
 	}
 
-	// Initialize empty map if missing
+	// Ensure Documents map is initialized
 	if collection.Documents == nil {
 		collection.Documents = make(map[string]*models.Document)
 	}
+
+	// Set the path after loading
+	collection.Path = colPath
 
 	return &collection, nil
 }
