@@ -1,6 +1,4 @@
-Got it! Since you're not using an API and `main.go` serves as the **client interface**, I'll rewrite your `README.md` to reflect the **file-based database system** with a **command-line interface**. Here's a fully updated version that accurately describes the project you’ve built:
 
----
 
 # Build Your Own Database  
 📦 A lightweight, file-based database built from scratch using Go – **no external DBs**, **no APIs**, just pure Go code!  
