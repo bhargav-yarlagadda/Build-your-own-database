@@ -42,19 +42,6 @@ type Document struct {
 	Path string                 `json:"path"` // Path to the file on disk (optional)
 }
 
-// KeyValue represents a single key-value pair
-type KeyValue struct {
-	Key   string      `json:"key"`   // Key name
-	Value interface{} `json:"value"` // Value associated with the key
-}
-
-// Response represents a generic response for operations
-type Response struct {
-	Success bool        `json:"success"` // Indicates success or failure
-	Message string      `json:"message"` // Descriptive message
-	Data    interface{} `json:"data"`    // Any additional data (optional)
-}
-
 
 func (d *Document) Add(key string, value interface{}) error {
 	if _, exists := d.Data[key]; exists {
