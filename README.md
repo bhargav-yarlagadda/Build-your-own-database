@@ -1,89 +1,202 @@
+Got it! Since you're not using an API and `main.go` serves as the **client interface**, I'll rewrite your `README.md` to reflect the **file-based database system** with a **command-line interface**. Here's a fully updated version that accurately describes the project you’ve built:
 
+---
 
+# Build Your Own Database  
+📦 A lightweight, file-based database built from scratch using Go – **no external DBs**, **no APIs**, just pure Go code!  
+Everything is handled via the `main.go` file, which acts as the client interface for interacting with the database system.
 
-# Build Your Own Database 
-🚀 I'm currently working on the `db-revamp` branch.  
-If you'd like to contribute, pull the latest changes from `db-revamp` for the latest updates or `dev` for a more stable experience.  
-Submit a PR, and let's make this repo even better! 😃  
-Happy coding! 🚀  
+---
 
-This is a simple database implementation using Go and Fiber. It provides an API for managing databases and documents, allowing users to create, delete, and manage documents within databases. This project is built with Go's powerful standard library and the Fiber web framework for creating RESTful APIs.
+## 🧠 What Is This?
 
-## Features
+This project is a simple yet powerful key-value document database system implemented entirely in Go. It allows users to:
 
-- Create a database
-- Delete a database
-- Create a document within a database
-- Delete a document from a database
-- access attributes in the documents and modify  them.
-- Implemented concurrency control mechanisms to manage shared resource locking during simultaneous database edits, ensuring data consistency and preventing race conditions
-## Technologies Used
+- Create/delete **databases**
+- Create/delete **documents** inside databases
+- **Access**, **modify**, **rename**, and **delete** key-value pairs inside documents
+- **Fetch documents** using their **name**
+- Perform all operations from the **command line**, with a focus on modular, extensible architecture
 
-- **Go**: The programming language for building the database and API.
-- **Fiber**: A fast and lightweight web framework for Go.
-- **UUID**: Used for generating unique identifiers for documents.
-- **JSON**: Used for document storage.
+All data is stored **locally in files** and persists between sessions. Internally, the system uses **UUIDs**, but users interact with it using **names** for ease of access.
 
+---
 
+## ✨ Features
 
-## Project Structure
+- ✅ Create & delete databases  
+- ✅ Create & delete documents by name  
+- ✅ Add/update/delete key-value pairs in a document  
+- ✅ Fetch documents by name  
+- ✅ Rename document names  
+- ✅ File-based storage (JSON)  
+- ✅ Concurrency-safe using Go mutexes  
+- ✅ Modular code structure  
+
+---
+
+## 🛠 Technologies Used
+
+- **Go** – Core language  
+- **JSON** – For persistent document storage  
+- **UUID** – For unique internal document IDs  
+- **Mutex** – For handling concurrent operations safely  
+
+---
+
+## 📁 Project Structure
 
 ```
-├── api/
-│   ├── handlers/
-│   │   ├── create_document.go   # Handler for creating documents
-│   │   └── delete_document.go   # Handler for deleting documents
-│   ├── routes/
-│   │   └── routes.go            # Defines all API routes
-├── config/config.go
+├── config/
+│   └── config.go                  # Configuration for base file path
 ├── database/
 │   ├── db/
-│   │   └── database.go          # Contains database-related functions
+│   │   └── database.go            # Functions for DB creation/deletion
 │   ├── document/
-│   │   └── document.go          # Functions for document creation and management
-│   ├── key-valueskey-values/
-│   │   └── document.go          # Functions for accessing attributes in doucments
-│   └── models/
-│       └── models.go          # Data models (e.g., document)
+│   │   └── document.go           # Document creation/deletion, renaming
+│   │   └── document.go           # Add/update/delete key-value pairs
+│   ├── models/
+│   │   └── models.go             # Data models for DB and documents
 │   └── utils/
-│       └── utils.go          # Utility functions 
-├── main.go                      # Entry point for the Go server
-├── go.mod                      
-├── go.sum
-└── README.md                    # MardDown
+│       └── utils.go              # File and helper utilities
+├── main.go                        # CLI entry point for all operations
+├── go.mod                         # Go module definition
+├── go.sum                         # Go dependency checksum
+└── README.md                      # You're reading it!
 ```
 
+---
 
-## installation
+## 🚀 Getting Started
+
 ```bash
-  git clone https://github.com/yourusername/build-your-own-database.git
-  cd build-your-own-database
-
+git clone https://github.com/bhargav-yarlagadda/build-your-own-database.git
+cd build-your-own-database
 ```
-install the dependencies
+
+Install dependencies:
+
 ```bash
-go mod tidy 
+go mod tidy
 ```
 
-start the api
+Run the project:
+
 ```bash
 go run main.go
 ```
 
-### navigate to config.go and change the basePath as per your preference
+> **Note**: You can modify the default file storage path by updating `config/config.go`.
 
-## API Endpoints
+---
+# Refactoring `dbManager.go` into `document_manager.go` and `collection_manager.go`
 
-# API Endpoints
+## Motivation
+The original `dbManager.go` file was handling logic for both collections and documents in a single place. This violated the **Single Responsibility Principle** and made the codebase harder to maintain and extend.
 
-- **POST** `/create-database`
-- **DELETE** `/delete-database/{databaseName}`
-- **POST** `/{databaseName}/create-document`
-- **DELETE** `/{databaseName}/delete-document/{documentName}`
-- **GET** `/{databaseName}/documents`
-- **GET** `/{databaseName}/document/{documentName}`
-- **PATCH** `/{databaseName}/update-document/{documentName}`
-- **PATCH** `/{databaseName}/{documentName}/delete-pair/{key}`
-- **PATCH** `/{databaseName}/{documentName}/update-pair`
-## ToDo's
-- Distributed File Storage
+## Changes Made
+
+### 1. Created New Files
+- `document_manager.go`: Handles all document-specific operations.
+- `collection_manager.go`: Handles all collection-specific operations.
+
+---
+
+### 2. Document Refactor Highlights
+
+#### ✅ New Struct: `DocumentManager`
+- Encapsulates all document-specific CRUD operations.
+
+#### ✅ Thread-Safety
+- Introduced `sync.RWMutex` (`docMux`) to ensure concurrent read/write safety while accessing or modifying documents.
+
+#### ✅ Clear Method Separation
+Each method is focused on a single task:
+- `CreateDocument`
+- `UseDocument`
+- `UpdateDocument`
+- `DeleteDocument`
+- `FetchDocument`
+- `RenameDocument`
+- `DeleteKey`
+
+#### ✅ File I/O Improvements
+- Used `json.NewEncoder`/`Decoder` consistently.
+- Ensured proper file closing using `defer`.
+
+#### ✅ Error Handling
+- Added meaningful error messages.
+- Ensured consistency in error format and logging.
+
+#### ✅ In-Memory Caching
+- When a document is used, it is loaded into memory if not already present.
+
+---
+
+### 3. Collection Refactor Highlights
+
+#### ✅ New Struct: `CollectionManager`
+- Handles collection-level logic such as:
+  - `CreateCollection`
+  - `DeleteCollection`
+  - `ListCollections`
+  - `RenameCollection`
+  - `LoadCollection` from disk
+
+#### ✅ Directory Structure
+- Each collection has its own subdirectory inside `./data`.
+
+#### ✅ Improved Initialization
+- Clean separation between initializing a collection and working with documents inside it.
+
+#### ✅ Mutex for Collection Safety
+- Collection-level operations are also thread-safe using `sync.Mutex`.
+
+---
+
+## Benefits
+- **Cleaner Code Structure**: Collections and documents now handled separately.
+- **Easier to Maintain**: Logical grouping of responsibilities.
+- **Better Concurrency**: Thread-safe reads and writes.
+- **Improved Readability**: Self-explanatory function names and simplified logic.
+
+## To Do
+- Add unit tests for `DocumentManager` and `CollectionManager`
+- Extend functionality with indexing or search support
+- Integrate logging system instead of `fmt.Println`
+
+## Example Usage
+```go
+collection := collectionManager.CreateCollection("users")
+
+docManager := NewDocumentManager(collection)
+docManager.CreateDocument("user1", map[string]interface{}{"name": "John"})
+```
+
+---
+✅ Refactored, modular, and scalable!
+
+
+
+
+
+---
+
+## 📌 To-Do's
+
+- Implement Distributed File Storage  
+- Add CLI interface with flags (optional)  
+- Enable nested key support  
+- Add document versioning (optional history)  
+- Unit tests for each module  
+
+---
+
+## 🙌 Contribute
+
+Fork the repo, make your changes, and raise a PR!  
+Suggestions and improvements are always welcome. 😊
+
+---
+
+Let me know if you'd like me to generate badges, screenshots, or usage gifs for a finishing touch!
