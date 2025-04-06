@@ -81,7 +81,7 @@ go mod tidy
 ```
 
 Run the project:
-
+**main.go acts as a client that interacts with the db. take a glimpse of main.go to understand the working of the db.**
 ```bash
 go run main.go
 ```
@@ -153,7 +153,6 @@ Each method is focused on a single task:
 - Collection-level operations are also thread-safe using `sync.Mutex`.
 
 ---
-
 ## Benefits
 - **Cleaner Code Structure**: Collections and documents now handled separately.
 - **Easier to Maintain**: Logical grouping of responsibilities.
